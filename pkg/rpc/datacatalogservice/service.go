@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"time"
 
 	"github.com/flyteorg/datacatalog/pkg/manager/impl"
 	"github.com/flyteorg/datacatalog/pkg/manager/interfaces"
@@ -20,9 +21,10 @@ import (
 )
 
 type DataCatalogService struct {
-	DatasetManager  interfaces.DatasetManager
-	ArtifactManager interfaces.ArtifactManager
-	TagManager      interfaces.TagManager
+	DatasetManager     interfaces.DatasetManager
+	ArtifactManager    interfaces.ArtifactManager
+	TagManager         interfaces.TagManager
+	ReservationManager interfaces.ReservationManager
 }
 
 func (s *DataCatalogService) CreateDataset(ctx context.Context, request *catalog.CreateDatasetRequest) (*catalog.CreateDatasetResponse, error) {
@@ -51,6 +53,18 @@ func (s *DataCatalogService) AddTag(ctx context.Context, request *catalog.AddTag
 
 func (s *DataCatalogService) ListDatasets(ctx context.Context, request *catalog.ListDatasetsRequest) (*catalog.ListDatasetsResponse, error) {
 	return s.DatasetManager.ListDatasets(ctx, request)
+}
+
+func (s *DataCatalogService) GetOrReserveArtifact(ctx context.Context, request *catalog.GetOrReserveArtifactRequest) (*catalog.GetOrReserveArtifactResponse, error) {
+	return s.ReservationManager.GetOrReserveArtifact(ctx, request)
+}
+
+func (s *DataCatalogService) ExtendReservation(ctx context.Context, request *catalog.ExtendReservationRequest) (*catalog.ExtendReservationResponse, error) {
+	return s.ReservationManager.ExtendReservation(ctx, request)
+}
+
+func (s *DataCatalogService) ReleaseReservation(ctx context.Context, request *catalog.ReleaseReservationRequest) (*catalog.ReleaseReservationResponse, error) {
+	return s.ReservationManager.ReleaseReservation(ctx, request)
 }
 
 func NewDataCatalogService() *DataCatalogService {
@@ -110,5 +124,7 @@ func NewDataCatalogService() *DataCatalogService {
 		DatasetManager:  impl.NewDatasetManager(repos, dataStorageClient, catalogScope.NewSubScope("dataset")),
 		ArtifactManager: impl.NewArtifactManager(repos, dataStorageClient, storagePrefix, catalogScope.NewSubScope("artifact")),
 		TagManager:      impl.NewTagManager(repos, dataStorageClient, catalogScope.NewSubScope("tag")),
+		ReservationManager: impl.NewReservationManager(repos, time.Second*time.Duration(dataCatalogConfig.ReservationTimeoutSec), time.Now,
+			catalogScope.NewSubScope("reservation")),
 	}
 }

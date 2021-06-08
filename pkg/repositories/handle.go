@@ -73,6 +73,7 @@ func (h *DBHandle) Migrate(ctx context.Context) error {
 		logger.Infof(ctx, "Creating postgres extension uuid-ossp if it does not exist")
 		h.db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
 	}
+
 	if err := h.db.AutoMigrate(&models.Dataset{}); err != nil {
 		return err
 	}
@@ -94,6 +95,10 @@ func (h *DBHandle) Migrate(ctx context.Context) error {
 	}
 
 	if err := h.db.AutoMigrate(&models.Partition{}); err != nil {
+		return err
+	}
+
+	if err := h.db.AutoMigrate(&models.Reservation{}); err != nil {
 		return err
 	}
 
